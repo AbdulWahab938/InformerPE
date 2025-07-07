@@ -44,8 +44,8 @@ class FullAttention(nn.Module):
         #print(Q_x.shape, K_p.shape, Q_p.shape, K_x.shape)
 
         # Cross attention terms only
-        scores = torch.einsum("blhe,bshe->bhls", Q_x, K_p) + \
-                 torch.einsum("blhe,bshe->bhls", Q_p, K_x)
+        scores = torch.einsum("blhe,bshe->bhls", Q_x, K_x) + \
+                 torch.einsum("blhe,bshe->bhls", Q_p, K_p)
     
         if self.mask_flag:
             if attn_mask is None:
@@ -164,6 +164,8 @@ class AttentionLayer(nn.Module):
         self.key_projection = nn.Linear(d_model, d_keys * n_heads)
         self.value_projection = nn.Linear(d_model, d_values * n_heads)
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
+        self.query_pos_projection=nn.Linear(d_model, d_keys * n_heads)
+        self.key_pos_projection=nn.Linear(d_model, d_keys * n_heads)
         self.n_heads = n_heads
         self.mix = mix
 
@@ -177,10 +179,9 @@ class AttentionLayer(nn.Module):
         Q_x = self.query_projection(queries).view(B, L, H, -1)
         K_x = self.key_projection(keys).view(B, S, H, -1)
         V = self.value_projection(values).view(B, S, H, -1)
-    
-        Q_p = self.query_projection(pos_queries).view(B, L, H, -1)
-        K_p = self.key_projection(pos_keys).view(B, S, H, -1)
-    
+        
+        Q_p = self.query_pos_projection(pos_queries).view(B, L, H, -1)
+        K_p = self.key_pos_projection(pos_keys).view(B, S, H, -1)
         out, attn = self.inner_attention(
             Q_x, K_p, Q_p, K_x, V, attn_mask  # custom attention call
         )
