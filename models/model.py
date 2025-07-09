@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from utils.masking import TriangularCausalMask, ProbMask
 from models.encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack
 from models.decoder import Decoder, DecoderLayer
-from models.attn import FullAttention, ProbAttention, AttentionLayer
+from models.attn import TUPEFullAttention, ProbAttention, TUPEAttentionLayer
 from models.embed import DataEmbedding
 
 class Informer(nn.Module):
@@ -23,12 +23,12 @@ class Informer(nn.Module):
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
         self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
         # Attention
-        Attn = ProbAttention if attn=='prob' else FullAttention
+        Attn = ProbAttention if attn=='prob' else TUPEFullAttention
         # Encoder
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=output_attention), 
+                    TUPEAttentionLayer(TUPEFullAttention(False, factor, attention_dropout=dropout, output_attention=output_attention), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
@@ -47,9 +47,9 @@ class Informer(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(FullAttention(True, factor, attention_dropout=dropout, output_attention=False), 
+                    TUPEAttentionLayer(TUPEFullAttention(True, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
+                    TUPEAttentionLayer(TUPEFullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
@@ -96,7 +96,7 @@ class InformerStack(nn.Module):
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
         self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
         # Attention
-        Attn = ProbAttention if attn=='prob' else FullAttention
+        Attn = ProbAttention if attn=='prob' else TUPEFullAttention
         # Encoder
 
         inp_lens = list(range(len(e_layers))) # [0,1,2,...] you can customize here
@@ -104,7 +104,7 @@ class InformerStack(nn.Module):
             Encoder(
                 [
                     EncoderLayer(
-                        AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=output_attention), 
+                        TUPEAttentionLayer(TUPEFullAttention(False, factor, attention_dropout=dropout, output_attention=output_attention), 
                                     d_model, n_heads, mix=False),
                         d_model,
                         d_ff,
@@ -124,9 +124,9 @@ class InformerStack(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(FullAttention(True, factor, attention_dropout=dropout, output_attention=False), 
+                    TUPEAttentionLayer(TUPEFullAttention(True, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
+                    TUPEAttentionLayer(TUPEFullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
